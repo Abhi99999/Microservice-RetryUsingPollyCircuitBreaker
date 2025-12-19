@@ -11,11 +11,11 @@ namespace FormulaOne.Api.Services
 {
     public class FlightService : IFlightService
     {
-        // Retry policy: Retry up to 4 times with Polly
+        // Retry policy: Retry up to 9 times with Polly
         // Handle<Exception>() this will handle any exception thrown during the execution by api like timeout, server down etc
         //OrResult<RestResponse> (resp => !resp.IsSuccessful) this will handle unsuccessful responses like 5xx, 4xx etc
         private static readonly AsyncRetryPolicy<RestResponse> retryPolicy = Policy.Handle<Exception>().OrResult<RestResponse>(resp => !resp.IsSuccessful)
-            .WaitAndRetryAsync(4, attempt =>
+            .WaitAndRetryAsync(9, attempt =>
           {
               Console.WriteLine($"Attempt {attempt} - retrying...");
               return TimeSpan.FromSeconds(3 + attempt);
@@ -34,9 +34,9 @@ namespace FormulaOne.Api.Services
               });
 
         //Advanced circuit breaker policy with failure threshold and sampling duration
-        // 0.5 = 50% failure threshold, TimeSpan.FromMinutes(1) = sampling duration of 1 minute, 10 = minimum of 10 requests, TimeSpan.FromSeconds(30) = duration of break
+        // 0.5 = 50% failure threshold, TimeSpan.FromMinutes(5) = sampling duration of 5 minute, 6 = minimum of 6 requests, TimeSpan.FromSeconds(30) = duration of break
         private static readonly AsyncCircuitBreakerPolicy<RestResponse> advCircuitBreakerPolicy = Policy.Handle<Exception>().OrResult<RestResponse>(resp => !resp.IsSuccessful)
-          .AdvancedCircuitBreakerAsync(0.5, TimeSpan.FromMinutes(1), 10, TimeSpan.FromSeconds(30));
+          .AdvancedCircuitBreakerAsync(0.5, TimeSpan.FromMinutes(5), 6, TimeSpan.FromSeconds(30));
 
         public async Task<List<FlightDto>> GetAvailableFlights()
         {
